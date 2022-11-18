@@ -16,10 +16,94 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-
 from webdriver_manager.chrome import ChromeDriverManager
 
+from urllib.parse import urlparse, urljoin
+
 import time
+
+import re
+
+# if you want to get email only
+
+# internal_URLs = []
+
+# total_urls = 0
+
+# # https://www.thepythoncode.com/article/extract-all-website-links-python
+# def is_valid_URL(url):
+#     parsed = urlparse(url)
+
+#     return bool(parsed.netloc) and bool(parsed.scheme) and (url.find(".pdf") == -1)
+
+
+# def get_all_URLs(url):
+#     global all_URL, internal_URLs, external_URLs
+#     domain_name = urlparse(url).netloc
+
+#     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+
+#     driver.get(url)
+
+#     soup = BeautifulSoup(driver.page_source, "lxml")
+
+#     for a in soup.find_all("a", href=True):
+#         href = a.get("href")
+
+#         href = urljoin(url, href)
+
+#         parsed_href = urlparse(href)
+
+#         href = parsed_href.scheme + "://" + parsed_href.netloc + parsed_href.path
+
+#         if not is_valid_URL(href):
+#             # not a valid URL
+#             continue
+#         if href in internal_URLs:
+#             # already in the set
+#             continue
+#         if domain_name not in href:
+#             continue
+
+#         internal_URLs.append(href)
+
+#     driver.quit()
+#     return internal_URLs
+
+
+# def crawl(url, max_urls=30):
+#     global total_urls
+
+#     links = get_all_URLs(url)
+#     for link in links:
+#         if len(internal_URLs) > max_urls:
+#             break
+#         crawl(link, max_urls=max_urls)
+
+
+# def scrape(urls, max_urls=30):
+#     links_scraped = 0
+#     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
+
+#     if links_scraped < max_urls:
+#         links_scraped += 1
+
+#         email = re.compile(r"([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\.[a-zA-Z0-9_-]+){0,}")
+#         list = []
+
+#         for url in urls:
+#             driver.get(url)
+
+#             soup = BeautifulSoup(driver.page_source, "lxml")
+
+#             for x in soup.strings:
+#                 if email.search(x).group() and x not in list:
+#                     list.append(x)
+
+#     driver.quit()
+
+#     return list
+
 
 if __name__ == "__main__":
     start_time = time.time()
@@ -36,6 +120,11 @@ if __name__ == "__main__":
     # test
     website = f"{base_url}/staff-directory"
 
+    # crawl(base_url, total_urls)
+
+    # print(scrape(internal_URLs))
+
+    # scrape staff directory page of DLSU
     # setup chrome driver
     driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()))
 
