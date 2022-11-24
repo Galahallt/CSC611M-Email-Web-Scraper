@@ -117,6 +117,12 @@ if __name__ == "__main__":
 
     timeout = 15 * scrape_time  # timeout set to 60 * x (x = scrape_time)
 
+    # number of pages scraped for scrape statistics
+    num_pages_scraped = 0
+
+    # number of emails found for scrape statistics
+    num_emails_found = 0
+
     # test
     website = f"{base_url}/staff-directory"
 
@@ -134,7 +140,7 @@ if __name__ == "__main__":
     # Send GET request to the url
     driver.get(website)
 
-    # accept cookies
+    # accept cookies (blocks load more button if not clicked)
     WebDriverWait(driver, 10).until(
         EC.element_to_be_clickable(
             (
@@ -167,15 +173,19 @@ if __name__ == "__main__":
         "button", {"class": "dlsu-pvf-link-button btn btn-link"}
     )
 
-    personnel_data = [["name", "email", "department"]]
+    personnel_data = [["Full Name", "Email", "Department"]]
 
     # get id value of div to go to individual personnel page
+
+    num_pages_scraped += 1
 
     for p in personnel_list:
         personnel_id = str(p.get("value")).strip()
         personnel_page = (
             f"https://www.dlsu.edu.ph/staff-directory/?personnel={personnel_id}"
         )
+
+        num_pages_scraped += 1
 
         # get page of the personnel
         driver.get(personnel_page)
@@ -189,27 +199,36 @@ if __name__ == "__main__":
         ul = soup.find("ul", {"class": "list-unstyled text-capitalize text-center"})
 
         for li in ul.find_all("li", {"class": False, "id": False}):
-            department = li.find("span")
+            department = li.find("span").get_text()
 
         # get name
-        name = soup.find("h3")
+        name = soup.find("h3").get_text()
+        fullname = name.split(", ")
+        fullname.reverse()
+        fullname = " ".join(fullname)
 
         # get e-mail
         email = soup.find("a", {"class": "btn btn-sm btn-block text-capitalize"})
 
         if email:
             email = email["href"].replace("mailto:", "")
+            num_emails_found += 1
 
         # put it in a list
-        personnel_info = [name.get_text(), email, department.get_text()]
+        personnel_info = [fullname, email, department]
 
         if personnel_info not in personnel_data:
             personnel_data.append(personnel_info)
 
     print(personnel_data)
 
-    with open("result.txt", "w") as file:
+    with open("details.txt", "w") as file:
         for row in personnel_data:
             file.write(",".join([str(a) for a in row]) + "\n")
+
+    with open("statistics.txt", "w") as file:
+        file.write(
+            ",".join([str(base_url), str(num_pages_scraped), str(num_emails_found)])
+        )
 
     driver.quit()
