@@ -9,6 +9,8 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 from urllib.parse import urlparse, urljoin
 
+from requests_html import HTMLSession
+
 import time
 
 import re
@@ -26,7 +28,7 @@ final_personnel = queue.Queue()
 # input variables
 start_time = time.time()
 timeout = 15
-num_threads = 8 
+num_threads = 1 
 main_url = "https://www.dlsu.edu.ph/staff-directory/"
 
 #statistics
@@ -58,60 +60,78 @@ class Runnable (threading.Thread):
                     de += chr(int(e[i:i+2], 16)^k)
 
             return de
+        
+        def create_driver():
+            """returns a new chrome webdriver"""
+            chromeOptions = webdriver.ChromeOptions()
+            chromeOptions.add_argument("--headless") # make it not visible, just comment if you like seeing opened browsers
+            chromeOptions.add_argument('no-referrer')
+            # chromeOptions.add_argument(f'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36')
+            # chromeOptions.add_argument('--no-sandbox')
+            return webdriver.Chrome(options=chromeOptions) 
 
         def process_personnel(personnel):
-
-            
             url = personnel["url"]
 
-            response = requests.get(url)
-            soup = BeautifulSoup(response.content, 'lxml')
+            webdriver = create_driver()
+
+            webdriver.get(url)
+            
+            myElem = WebDriverWait(webdriver, 5).until(EC.presence_of_element_located((By.XPATH, '//*[@id="post-34964"]/div/div/div/div/div[2]/div[3]/div/ul')))
+
+            # webdriver.implicitly_wait()
+            soup = BeautifulSoup(webdriver.page_source, 'lxml')
 
             soup.prettify()
 
-            # get department
-            ul = soup.find("ul", {"class": "list-unstyled text-capitalize text-center"})
+            
+            if myElem:
+                # get department
+                ul = soup.find("ul", {"class": "list-unstyled text-capitalize text-center"})
 
-            for li in ul.find_all("li", {"class": False, "id": False}):
-                department = li.find("span").get_text()
-
-
-            # get name
-            name = soup.find("h3").get_text()
-            fullname = name.split(", ")
-            fullname.reverse()
-            fullname = " ".join(fullname)
-
-            # get e-mail
-            email = soup.find("a", {"class": "btn btn-sm btn-block text-capitalize"})
-
-            if email:
-                email = email["href"].replace("mailto:", "")
-                email = email.replace('/cdn-cgi/l/email-protection#', "")
-                email = decodeEmail(email)
-
-                # increment emails found
-                global num_emails_found
-                shared_resource_lock_email.acquire()
-                num_emails_found += 1
-                shared_resource_lock_email.release()
+                for li in ul.find_all("li", {"class": False, "id": False}):
+                    department = li.find("span").get_text()
 
 
-            # put it in a dictionary
-            personnel_info = dict()
+                # get name
+                name = soup.find("h3").get_text()
+                fullname = name.split(", ")
+                fullname.reverse()
+                fullname = " ".join(fullname)
 
-            personnel_info["fullname"] = fullname
-            personnel_info["email"] = email
-            personnel_info["department"] = department
+                print(fullname)
 
-            final_personnel.put(personnel_info)
+                # get e-mail
+                email = soup.find("a", {"class": "btn btn-sm btn-block text-capitalize"})
 
-            # increment scraped pages
-            global num_pages_scraped
-            shared_resource_lock_pages.acquire()
-            num_pages_scraped +=1
-            shared_resource_lock_pages.release()
-        
+                if email:
+                    email = email["href"].replace("mailto:", "")
+                    email = email.replace('/cdn-cgi/l/email-protection#', "")
+                    email = decodeEmail(email)
+
+                    # increment emails found
+                    global num_emails_found
+                    shared_resource_lock_email.acquire()
+                    num_emails_found += 1
+                    shared_resource_lock_email.release()
+
+
+                # put it in a dictionary
+                personnel_info = dict()
+
+                personnel_info["fullname"] = fullname
+                personnel_info["email"] = email
+                personnel_info["department"] = department
+
+                final_personnel.put(personnel_info)
+
+                # increment scraped pages
+                global num_pages_scraped
+                shared_resource_lock_pages.acquire()
+                num_pages_scraped +=1
+                shared_resource_lock_pages.release()
+
+                webdriver.quit()
         while True:
 
             try:
