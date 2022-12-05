@@ -1,27 +1,20 @@
-from bs4 import BeautifulSoup
-import pyppdf.patch_pyppeteer
-from requests_html import HTMLSession
+import multiprocessing
 
 if __name__ == "__main__":
-    url = f"https://www.dlsu.edu.ph/staff-directory/?personnel=32665788416"
+    final_personnel = multiprocessing.Queue()
 
-    session = HTMLSession()
+    personnel_info = dict()
 
-    res = session.get(url)
-    res.html.render(timeout=120)
-    html = res.html.html
+    personnel_info["fullname"] = "Paolo Espiritu"
+    personnel_info["email"] = "espiritu.paolo1@gmail.com"
+    personnel_info["department"] = "CCS"
 
-    soup = BeautifulSoup(html, "html.parser")
+    final_personnel.put(personnel_info)
 
-    soup.prettify()
+    for a, v in final_personnel.get().items():
+        print(v)
 
-    # if myElem:
-    # get department
-    ul = soup.find("ul", {"class": "list-unstyled text-capitalize text-center"})
-    print(ul)
-
-    for li in ul.find_all("li", {"class": False, "id": False}):
-        print(li)
-        department = li.find("span").get_text()
-
-    print(department)
+    # with open("test.txt", "w") as file:
+    #     file.write("Full Name,Email,College\n")
+    #     while not final_personnel.empty():
+    #         file.write(",".join([str(a) for a in final_personnel.get()]) + "\n")

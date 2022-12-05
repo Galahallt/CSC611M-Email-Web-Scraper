@@ -5,7 +5,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-import threading
 import multiprocessing
 
 from bs4 import BeautifulSoup
@@ -33,12 +32,12 @@ class Runnable(multiprocessing.Process):
         num_emails_found,
     ):
         multiprocessing.Process.__init__(self)
-        self.input_personnel = (input_personnel,)
-        self.final_personnel = (final_personnel,)
-        self.shared_resource_lock_email = (shared_resource_lock_email,)
-        self.shared_resource_lock_pages = (shared_resource_lock_pages,)
-        self.num_pages_scraped = (num_pages_scraped,)
-        self.num_emails_found = (num_emails_found,)
+        self.input_personnel = input_personnel
+        self.final_personnel = final_personnel
+        self.shared_resource_lock_email = shared_resource_lock_email
+        self.shared_resource_lock_pages = shared_resource_lock_pages
+        self.num_pages_scraped = num_pages_scraped
+        self.num_emails_found = num_emails_found
 
     def run(self):
         message = "\nProcess {} working hard!"
@@ -143,7 +142,7 @@ class Runnable(multiprocessing.Process):
             try:
                 personnel = self.input_personnel.get(timeout=1)
             except Exception as e:
-                print(e)
+                print("input personnel:" + str(e))
                 break
 
             print(message.format(id(self)))
@@ -217,11 +216,19 @@ def statistics(final_personnel, num_pages_scraped, num_emails_found):
     with open("details.txt", "w") as file:
         file.write("Full Name,Email,College\n")
         while not final_personnel.empty():
-            file.write(",".join([str(a) for a in final_personnel.get()]) + "\n")
+            file.write(
+                ",".join([str(v) for k, v in final_personnel.get().items()]) + "\n"
+            )
 
     with open("statistics.txt", "w") as file:
         file.write(
-            ",".join([str(main_url), str(num_pages_scraped), str(num_emails_found)])
+            ",".join(
+                [
+                    str(main_url),
+                    str(num_pages_scraped.value),
+                    str(num_emails_found.value),
+                ]
+            )
         )
 
 
