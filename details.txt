@@ -1,18 +1,1 @@
 Full Name,Email,College
-FELICIANO S. ALMAZORA,feliciano.almazora.jr@dlsu.edu.ph,Accountancy
-VAN JAPHETH M. ANCLA,None,Accountancy
-MICHELLE A. ANG,michelle.ang@dlsu.edu.ph,Accountancy
-WILFREDO A. BALTAZAR,wilfredo.baltazar@dlsu.edu.ph,Accountancy
-FE VIOLETA G. BALURAN,fe.baluran@dlsu.edu.ph,Accountancy
-MA. SINAMAR VENUS V. BAUTISTA,None,Accountancy
-BERLIN B. BAUZON,None,Accountancy
-MARIA BLESELDA B. BAUZON,maria.bauzon@dlsu.edu.ph,Accountancy
-JONATHAN P. BINALUYO,jonathan.binaluyo@dlsu.edu.ph,Accountancy
-SALLY A. CHUA,None,Accountancy
-CARMELITA C. CLERIGO,maria.clerigo@dlsu.edu.ph,Accountancy
-HEINDRITZ Y. CONCEPCION,None,Accountancy
-JENNIFER ANNE MARIE D. CRUZ,jennifer.cruz@dlsu.edu.ph,Accountancy
-MICHAEL STEVE M. CRUZ,None,Accountancy
-CYNTHIA P. CUDIA,cynthia.cudia@dlsu.edu.ph,Accountancy
-ELLERY D. DE LEON,ellery.deleon@dlsu.edu.ph,Accountancy
-ABIGAEL S. DEMDAM,abigael.demdam@dlsu.edu.ph,Accountancy
