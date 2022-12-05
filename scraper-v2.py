@@ -9,8 +9,6 @@ from webdriver_manager.chrome import ChromeDriverManager
 
 from urllib.parse import urlparse, urljoin
 
-from requests_html import HTMLSession
-
 import time
 
 import re
@@ -27,48 +25,49 @@ final_personnel = queue.Queue()
 
 # input variables
 start_time = time.time()
-timeout = 15
-num_threads = 1 
+timeout = 25
+num_threads = 1
 main_url = "https://www.dlsu.edu.ph/staff-directory/"
 
-#statistics
+# statistics
 num_pages_scraped = 0
 shared_resource_lock_email = threading.Lock()
 shared_resource_lock_pages = threading.Lock()
 num_emails_found = 0
 
-class Runnable (threading.Thread):
-    
 
+class Runnable(threading.Thread):
     def __init__(self):
         threading.Thread.__init__(self)
 
     def run(self):
         message = "\nThread {} working hard!"
-        
+
         # checks if valid email, if not it decodes the encryption
         def decodeEmail(e):
-            regex = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+            regex = r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b"
 
-            if(re.fullmatch(regex,e)):
+            if re.fullmatch(regex, e):
                 de = e
             else:
                 de = ""
                 k = int(e[:2], 16)
 
-                for i in range(2, len(e)-1, 2):
-                    de += chr(int(e[i:i+2], 16)^k)
+                for i in range(2, len(e) - 1, 2):
+                    de += chr(int(e[i : i + 2], 16) ^ k)
 
             return de
-        
+
         def create_driver():
             """returns a new chrome webdriver"""
             chromeOptions = webdriver.ChromeOptions()
-            chromeOptions.add_argument("--headless") # make it not visible, just comment if you like seeing opened browsers
-            chromeOptions.add_argument('no-referrer')
+            chromeOptions.add_argument(
+                "--headless"
+            )  # make it not visible, just comment if you like seeing opened browsers
+            chromeOptions.add_argument("no-referrer")
             # chromeOptions.add_argument(f'user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.79 Safari/537.36')
             # chromeOptions.add_argument('--no-sandbox')
-            return webdriver.Chrome(options=chromeOptions) 
+            return webdriver.Chrome(options=chromeOptions)
 
         def process_personnel(personnel):
             url = personnel["url"]
@@ -76,22 +75,29 @@ class Runnable (threading.Thread):
             webdriver = create_driver()
 
             webdriver.get(url)
-            
-            myElem = WebDriverWait(webdriver, 5).until(EC.presence_of_element_located((By.XPATH, '//*[@id="post-34964"]/div/div/div/div/div[2]/div[3]/div/ul')))
+
+            myElem = WebDriverWait(webdriver, 5).until(
+                EC.presence_of_element_located(
+                    (
+                        By.XPATH,
+                        '//*[@id="post-34964"]/div/div/div/div/div[2]/div[3]/div/ul',
+                    )
+                )
+            )
 
             # webdriver.implicitly_wait()
-            soup = BeautifulSoup(webdriver.page_source, 'lxml')
+            soup = BeautifulSoup(webdriver.page_source, "lxml")
 
             soup.prettify()
 
-            
             if myElem:
                 # get department
-                ul = soup.find("ul", {"class": "list-unstyled text-capitalize text-center"})
+                ul = soup.find(
+                    "ul", {"class": "list-unstyled text-capitalize text-center"}
+                )
 
                 for li in ul.find_all("li", {"class": False, "id": False}):
                     department = li.find("span").get_text()
-
 
                 # get name
                 name = soup.find("h3").get_text()
@@ -102,11 +108,13 @@ class Runnable (threading.Thread):
                 print(fullname)
 
                 # get e-mail
-                email = soup.find("a", {"class": "btn btn-sm btn-block text-capitalize"})
+                email = soup.find(
+                    "a", {"class": "btn btn-sm btn-block text-capitalize"}
+                )
 
                 if email:
                     email = email["href"].replace("mailto:", "")
-                    email = email.replace('/cdn-cgi/l/email-protection#', "")
+                    email = email.replace("/cdn-cgi/l/email-protection#", "")
                     email = decodeEmail(email)
 
                     # increment emails found
@@ -114,7 +122,6 @@ class Runnable (threading.Thread):
                     shared_resource_lock_email.acquire()
                     num_emails_found += 1
                     shared_resource_lock_email.release()
-
 
                 # put it in a dictionary
                 personnel_info = dict()
@@ -128,10 +135,11 @@ class Runnable (threading.Thread):
                 # increment scraped pages
                 global num_pages_scraped
                 shared_resource_lock_pages.acquire()
-                num_pages_scraped +=1
+                num_pages_scraped += 1
                 shared_resource_lock_pages.release()
 
                 webdriver.quit()
+
         while True:
 
             try:
@@ -215,7 +223,7 @@ if __name__ == "__main__":
     tick = time.time()
 
     threads = list()
-    
+
     # create threads
     for i in range(8):
         thread = Runnable()
@@ -229,7 +237,6 @@ if __name__ == "__main__":
 
     print("Took {} seconds..".format(tock - tick))
 
-
     # for n in list(final_personnel.queue):
     #     print(n.get("fullname"))
     #     print(n.get("email"))
@@ -237,11 +244,10 @@ if __name__ == "__main__":
     #     print()
 
     with open("details.txt", "w") as file:
-            for n in list(final_personnel.queue):
-                file.write(",".join([str(a) for a in n.values()]) + "\n")
+        for n in list(final_personnel.queue):
+            file.write(",".join([str(a) for a in n.values()]) + "\n")
 
     with open("statistics.txt", "w") as file:
         file.write(
             ",".join([str(main_url), str(num_pages_scraped), str(num_emails_found)])
         )
-
