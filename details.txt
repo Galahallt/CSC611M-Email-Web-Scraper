@@ -1,49 +1,15 @@
 Full Name,Email,College
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
-fullname,email,department
+FE VIOLETA G. BALURAN,fe.baluran@dlsu.edu.ph,Accountancy
+WILFREDO A. BALTAZAR,wilfredo.baltazar@dlsu.edu.ph,Accountancy
+FELICIANO S. ALMAZORA,feliciano.almazora.jr@dlsu.edu.ph,Accountancy
+MICHELLE A. ANG,michelle.ang@dlsu.edu.ph,Accountancy
+MARK VINCENT B. BENDO,mark.vincent.bendo@dlsu.edu.ph,Accountancy
+VAN JAPHETH M. ANCLA,None,Accountancy
+ROXANIE C. CALIXTO,roxanie.calixto@dlsu.edu.ph,Accountancy
+BERLIN B. BAUZON,None,Accountancy
+NIMPHA M. AQUINO,nimpha.aquino@dlsu.edu.ph,Accountancy
+JONATHAN P. BINALUYO,jonathan.binaluyo@dlsu.edu.ph,Accountancy
+MA. SINAMAR VENUS V. BAUTISTA,None,Accountancy
+CARMELITA C. CLERIGO,maria.clerigo@dlsu.edu.ph,Accountancy
+HEINDRITZ Y. CONCEPCION,None,Accountancy
+MICHAEL STEVE M. CRUZ,None,Accountancy

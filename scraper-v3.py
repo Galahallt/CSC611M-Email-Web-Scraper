@@ -10,16 +10,12 @@ import queue
 
 from bs4 import BeautifulSoup
 import requests
-from requests_html import HTMLSession
 
 import time
 import re
 
-# input variables
-start_time = time.time()
-timeout = 25
-num_threads = 2
-main_url = "https://www.dlsu.edu.ph/staff-directory/"
+# page number of staff directory
+MAX_PAGES = 105
 
 # queue to get personnel url
 input_personnel = queue.Queue()
@@ -34,8 +30,10 @@ num_emails_found = 0
 
 
 class Runnable(threading.Thread):
-    def __init__(self):
+    def __init__(self, start_time, scrape_time):
         threading.Thread.__init__(self)
+        self.start_time = start_time
+        self.scrape_time = scrape_time
 
     def run(self):
         message = "\nThread {} working hard!"
@@ -71,7 +69,7 @@ class Runnable(threading.Thread):
 
                 webdriver.get(url)
 
-                myElem = WebDriverWait(webdriver, 120).until(
+                myElem = WebDriverWait(webdriver, 20).until(
                     EC.presence_of_element_located(
                         (
                             By.XPATH,
@@ -136,7 +134,7 @@ class Runnable(threading.Thread):
                     webdriver.quit()
             except Exception as e:
                 print(e)
-                print("Personnel page failed to load")
+                print("Personnel page <" + str(url) + "> failed to load")
 
         while True:
             try:
@@ -149,8 +147,38 @@ class Runnable(threading.Thread):
 
             process_personnel(personnel)
 
+            if time.time() > self.start_time + self.scrape_time:
+                break
 
-def scrape():
+
+def statistics(base_url, start_time):
+    with open("details.txt", "w") as file:
+        file.write("Full Name,Email,College\n")
+        for n in list(final_personnel.queue):
+            file.write(",".join([str(a) for a in n.values()]) + "\n")
+
+    with open("statistics.txt", "w") as file:
+        file.write(
+            ",".join([str(base_url), str(num_pages_scraped), str(num_emails_found)])
+        )
+
+    print(
+        "========================================"
+        + "\nStatistics:\nBase URL: "
+        + base_url
+        + "\nNumber of Pages Scraped: "
+        + str(num_pages_scraped)
+        + "\nNumber of Emails Found: "
+        + str(num_emails_found)
+        + "\n========================================"
+    )
+
+    print("Time elapsed: " + str(time.time() - start_time) + " seconds")
+
+
+def scrape(base_url, scrape_time, num_threads):
+    start_time = time.time()
+
     payload = {
         "search": "",
         "filter": "all",
@@ -163,59 +191,57 @@ def scrape():
         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/101.0.4951.64 Safari/537.36 Edg/101.0.1210.47",
         "accept-language": "en-US,en;q=0.9,it;q=0.8,es;q=0.7",
         "accept-encoding": "gzip, deflate, br",
-        "referer": "https://www.dlsu.edu.ph/staff-directory/",
+        "referrer": f"{base_url}/staff-directory",
     }
 
-    url = "https://www.dlsu.edu.ph/wp-json/dlsu-personnelviewer/v2.0/list/"
+    url = f"{base_url}/wp-json/dlsu-personnelviewer/v2.0/list/"
 
-    for payload["page"] in range(1, 5):
+    for payload["page"] in range(1, MAX_PAGES):
+        if time.time() > start_time + scrape_time:
+            break
         try:
             with requests.Session() as session:
                 res = session.get(url, headers=headers, json=payload)
 
             final = res.json()["personnel"]
 
+            global num_pages_scraped
+
+            num_pages_scraped += 1
+
             for i in final:
-                personnel_page = (
-                    f"https://www.dlsu.edu.ph/staff-directory/?personnel={i['id']}"
-                )
+                personnel_page = f"{base_url}/staff-directory/?personnel={i['id']}"
 
                 input_personnel.put(personnel_page)
-
-            print("queue: " + str(list(input_personnel.queue)))
 
             threads = []
 
             for i in range(num_threads):
-                thread = Runnable()
+                thread = Runnable(start_time, scrape_time)
                 thread.start()
                 threads.append(thread)
 
             for thread in threads:
                 thread.join()
 
-        except Exception:
+            statistics(base_url, start_time)
+
+        except Exception as e:
+            print(e)
             print("Connection to staff directory timed out")
+            print("Time Elapsed: " + str(time.time() - start_time) + " seconds")
             break
 
 
-def statistics():
-    with open("details.txt", "w") as file:
-        file.write("Full Name,Email,College\n")
-        for n in list(final_personnel.queue):
-            file.write(",".join([str(a) for a in n.values()]) + "\n")
-
-    with open("statistics.txt", "w") as file:
-        file.write(
-            ",".join([str(main_url), str(num_pages_scraped), str(num_emails_found)])
-        )
-
-
+# test input: https://www.dlsu.edu.ph/ 1 8
 if __name__ == "__main__":
-    start = time.time()
+    # take user input
+    base_url, scrape_time, num_threads = input().split()
 
-    scrape()
+    # convert data type of time and num_threads from str to int
+    scrape_time = int(scrape_time)
+    num_threads = int(num_threads)
 
-    statistics()
+    scrape_time = scrape_time * 60
 
-    print("Time elapsed: " + str(time.time() - start))
+    scrape(base_url, scrape_time, num_threads)
