@@ -1,15 +1,20 @@
-# used for testing python logic
-def test(links):
-    links.append(1)
-
-
-from urllib.parse import urlparse, urljoin
+import multiprocessing
 
 if __name__ == "__main__":
-    name = "ALMAZORA, FELICIANO S."
+    final_personnel = multiprocessing.Queue()
 
-    fullname = name.split(", ")
+    personnel_info = dict()
 
-    fullname.reverse()
+    personnel_info["fullname"] = "Paolo Espiritu"
+    personnel_info["email"] = "espiritu.paolo1@gmail.com"
+    personnel_info["department"] = "CCS"
 
-    print(" ".join(fullname).title())
+    final_personnel.put(personnel_info)
+
+    for a, v in final_personnel.get().items():
+        print(v)
+
+    # with open("test.txt", "w") as file:
+    #     file.write("Full Name,Email,College\n")
+    #     while not final_personnel.empty():
+    #         file.write(",".join([str(a) for a in final_personnel.get()]) + "\n")
