@@ -1,9 +1,7 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 
 import threading
 import queue
@@ -78,12 +76,11 @@ class Runnable(threading.Thread):
                     )
                 )
 
-                # webdriver.implicitly_wait()
-                soup = BeautifulSoup(webdriver.page_source, "lxml")
-
-                soup.prettify()
-
                 if myElem:
+                    soup = BeautifulSoup(webdriver.page_source, "lxml")
+
+                    soup.prettify()
+
                     # get department
                     ul = soup.find(
                         "ul", {"class": "list-unstyled text-capitalize text-center"}
@@ -224,14 +221,12 @@ def scrape(base_url, scrape_time, num_threads):
             for thread in threads:
                 thread.join()
 
-            
-
         except Exception as e:
             print(e)
             print("Connection to staff directory timed out")
             print("Time Elapsed: " + str(time.time() - start_time) + " seconds")
             break
-    
+
     statistics(base_url, start_time)
 
 
@@ -247,5 +242,3 @@ if __name__ == "__main__":
     scrape_time = scrape_time * 60
 
     scrape(base_url, scrape_time, num_threads)
-
-    

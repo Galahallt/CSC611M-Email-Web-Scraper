@@ -1,15 +1,12 @@
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 
 import multiprocessing
 
 from bs4 import BeautifulSoup
 import requests
-from requests_html import HTMLSession
 
 import time
 import re
@@ -82,9 +79,6 @@ class Runnable(multiprocessing.Process):
                         )
                     )
                 )
-
-                
-                
 
                 if myElem:
                     soup = BeautifulSoup(webdriver.page_source, "lxml")
@@ -265,14 +259,14 @@ def scrape(
             print(e)
             print("Connection to staff directory timed out")
             break
-    
+
     statistics(
-                base_url,
-                start_time,
-                final_personnel,
-                num_pages_scraped,
-                num_emails_found,
-            )
+        base_url,
+        start_time,
+        final_personnel,
+        num_pages_scraped,
+        num_emails_found,
+    )
 
 
 # test input: https://www.dlsu.edu.ph/ 1 8
