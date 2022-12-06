@@ -5,11 +5,11 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 
-import multiprocessing
+import threading
+import queue
 
 from bs4 import BeautifulSoup
 import requests
-from requests_html import HTMLSession
 
 import time
 import re
@@ -17,31 +17,26 @@ import re
 # page number of staff directory
 MAX_PAGES = 105
 
+# queue to get personnel url
+input_personnel = queue.Queue()
+# queue to get final details of personnel
+final_personnel = queue.Queue()
 
-class Runnable(multiprocessing.Process):
-    def __init__(
-        self,
-        input_personnel,
-        final_personnel,
-        shared_resource_lock_email,
-        shared_resource_lock_pages,
-        num_pages_scraped,
-        num_emails_found,
-        start_time,
-        scrape_time,
-    ):
-        multiprocessing.Process.__init__(self)
-        self.input_personnel = input_personnel
-        self.final_personnel = final_personnel
-        self.shared_resource_lock_email = shared_resource_lock_email
-        self.shared_resource_lock_pages = shared_resource_lock_pages
-        self.num_pages_scraped = num_pages_scraped
-        self.num_emails_found = num_emails_found
+# statistics
+num_pages_scraped = 0
+shared_resource_lock_email = threading.Lock()
+shared_resource_lock_pages = threading.Lock()
+num_emails_found = 0
+
+
+class Runnable(threading.Thread):
+    def __init__(self, start_time, scrape_time):
+        threading.Thread.__init__(self)
         self.start_time = start_time
         self.scrape_time = scrape_time
 
     def run(self):
-        message = "\nProcess {} working hard!"
+        message = "\nThread {} working hard!"
 
         # checks if valid email, if not it decodes the encryption
         def decodeEmail(e):
@@ -116,9 +111,10 @@ class Runnable(multiprocessing.Process):
                         email = decodeEmail(email)
 
                         # increment emails found
-                        self.shared_resource_lock_email.acquire()
-                        self.num_emails_found.value += 1
-                        self.shared_resource_lock_email.release()
+                        global num_emails_found
+                        shared_resource_lock_email.acquire()
+                        num_emails_found += 1
+                        shared_resource_lock_email.release()
 
                     # put it in a dictionary
                     personnel_info = dict()
@@ -127,12 +123,13 @@ class Runnable(multiprocessing.Process):
                     personnel_info["email"] = email
                     personnel_info["department"] = department
 
-                    self.final_personnel.put(personnel_info)
+                    final_personnel.put(personnel_info)
 
                     # increment scraped pages
-                    self.shared_resource_lock_pages.acquire()
-                    self.num_pages_scraped.value += 1
-                    self.shared_resource_lock_pages.release()
+                    global num_pages_scraped
+                    shared_resource_lock_pages.acquire()
+                    num_pages_scraped += 1
+                    shared_resource_lock_pages.release()
 
                     webdriver.quit()
             except Exception as e:
@@ -141,9 +138,9 @@ class Runnable(multiprocessing.Process):
 
         while True:
             try:
-                personnel = self.input_personnel.get(timeout=1)
+                personnel = input_personnel.get(timeout=1)
             except Exception as e:
-                print("input personnel:" + str(e))
+                print(e)
                 break
 
             print(message.format(id(self)))
@@ -154,56 +151,32 @@ class Runnable(multiprocessing.Process):
                 break
 
 
-def statistics(
-    base_url,
-    start_time,
-    final_personnel,
-    num_pages_scraped,
-    num_emails_found,
-):
+def statistics(base_url, start_time):
     with open("details.txt", "w") as file:
         file.write("Full Name,Email,College\n")
-        while not final_personnel.empty():
-            file.write(
-                ",".join([str(v) for k, v in final_personnel.get().items()]) + "\n"
-            )
+        for n in list(final_personnel.queue):
+            file.write(",".join([str(a) for a in n.values()]) + "\n")
 
     with open("statistics.txt", "w") as file:
         file.write(
-            ",".join(
-                [
-                    str(base_url),
-                    str(num_pages_scraped.value),
-                    str(num_emails_found.value),
-                ]
-            )
+            ",".join([str(base_url), str(num_pages_scraped), str(num_emails_found)])
         )
 
     print(
-        "========================================"
+        "\nMultithreading\n========================================"
         + "\nStatistics:\nBase URL: "
         + base_url
         + "\nNumber of Pages Scraped: "
-        + str(num_pages_scraped.value)
+        + str(num_pages_scraped)
         + "\nNumber of Emails Found: "
-        + str(num_emails_found.value)
+        + str(num_emails_found)
         + "\n========================================"
     )
 
     print("Time elapsed: " + str(time.time() - start_time) + " seconds")
 
 
-def scrape(
-    base_url,
-    scrape_time,
-    num_processes,
-    input_personnel,
-    final_personnel,
-    shared_resource_lock_email,
-    shared_resource_lock_pages,
-    num_pages_scraped,
-    num_emails_found,
-):
+def scrape(base_url, scrape_time, num_threads):
     start_time = time.time()
 
     payload = {
@@ -221,7 +194,7 @@ def scrape(
         "referrer": f"{base_url}/staff-directory",
     }
 
-    url = "https://www.dlsu.edu.ph/wp-json/dlsu-personnelviewer/v2.0/list/"
+    url = f"{base_url}/wp-json/dlsu-personnelviewer/v2.0/list/"
 
     for payload["page"] in range(1, MAX_PAGES):
         if time.time() > start_time + scrape_time:
@@ -232,81 +205,47 @@ def scrape(
 
             final = res.json()["personnel"]
 
-            num_pages_scraped.value += 1
+            global num_pages_scraped
+
+            num_pages_scraped += 1
 
             for i in final:
-                personnel_page = (
-                    f"https://www.dlsu.edu.ph/staff-directory/?personnel={i['id']}"
-                )
+                personnel_page = f"{base_url}/staff-directory/?personnel={i['id']}"
 
                 input_personnel.put(personnel_page)
 
-            processes = []
+            threads = []
 
-            for i in range(num_processes):
-                process = Runnable(
-                    input_personnel,
-                    final_personnel,
-                    shared_resource_lock_email,
-                    shared_resource_lock_pages,
-                    num_pages_scraped,
-                    num_emails_found,
-                    start_time,
-                    scrape_time,
-                )
-                process.start()
-                processes.append(process)
+            for i in range(num_threads):
+                thread = Runnable(start_time, scrape_time)
+                thread.start()
+                threads.append(thread)
 
-            for process in processes:
-                process.join()
+            for thread in threads:
+                thread.join()
 
-            statistics(
-                base_url,
-                start_time,
-                final_personnel,
-                num_pages_scraped,
-                num_emails_found,
-            )
+            
 
         except Exception as e:
             print(e)
             print("Connection to staff directory timed out")
+            print("Time Elapsed: " + str(time.time() - start_time) + " seconds")
             break
+    
+    statistics(base_url, start_time)
 
 
 # test input: https://www.dlsu.edu.ph/ 1 8
 if __name__ == "__main__":
     # take user input
-    base_url, scrape_time, num_processes = input().split()
+    base_url, scrape_time, num_threads = input().split()
 
     # convert data type of time and num_threads from str to int
     scrape_time = int(scrape_time)
-    num_processes = int(num_processes)
+    num_threads = int(num_threads)
 
     scrape_time = scrape_time * 60
 
-    # queue to get personnel url
-    input_personnel = multiprocessing.Queue()
+    scrape(base_url, scrape_time, num_threads)
 
-    # queue to get final details of personnel
-    final_personnel = multiprocessing.Queue()
-
-    # statistics
-    shared_resource_lock_email = multiprocessing.Lock()
-    shared_resource_lock_pages = multiprocessing.Lock()
-
-    manager = multiprocessing.Manager()
-    num_pages_scraped = manager.Value("i", 0)
-    num_emails_found = manager.Value("i", 0)
-
-    scrape(
-        base_url,
-        scrape_time,
-        num_processes,
-        input_personnel,
-        final_personnel,
-        shared_resource_lock_email,
-        shared_resource_lock_pages,
-        num_pages_scraped,
-        num_emails_found,
-    )
+    
