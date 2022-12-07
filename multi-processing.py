@@ -10,6 +10,7 @@ import requests
 
 import time
 import re
+import csv
 
 # page number of staff directory
 MAX_PAGES = 105
@@ -149,6 +150,46 @@ class Runnable(multiprocessing.Process):
                 break
 
 
+# statistics in txt file
+# def statistics(
+#     base_url,
+#     start_time,
+#     final_personnel,
+#     num_pages_scraped,
+#     num_emails_found,
+# ):
+#     with open("details.txt", "w") as file:
+#         file.write("Full Name,Email,College\n")
+#         while not final_personnel.empty():
+#             file.write(
+#                 ",".join([str(v) for k, v in final_personnel.get().items()]) + "\n"
+#             )
+
+#     with open("statistics.txt", "w") as file:
+#         file.write(
+#             ",".join(
+#                 [
+#                     str(base_url),
+#                     str(num_pages_scraped.value),
+#                     str(num_emails_found.value),
+#                 ]
+#             )
+#         )
+
+#     print(
+#         "\nMultiprocessing\n========================================"
+#         + "\nStatistics:\nBase URL: "
+#         + base_url
+#         + "\nNumber of Pages Scraped: "
+#         + str(num_pages_scraped.value)
+#         + "\nNumber of Emails Found: "
+#         + str(num_emails_found.value)
+#         + "\n========================================"
+#     )
+
+#     print("Time elapsed: " + str(time.time() - start_time) + " seconds")
+
+# statistics in csv file
 def statistics(
     base_url,
     start_time,
@@ -156,22 +197,16 @@ def statistics(
     num_pages_scraped,
     num_emails_found,
 ):
-    with open("details.txt", "w") as file:
-        file.write("Full Name,Email,College\n")
+    with open("details.csv", "w", encoding="UTF8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Full Name", "Email", "College"])
         while not final_personnel.empty():
-            file.write(
-                ",".join([str(v) for k, v in final_personnel.get().items()]) + "\n"
-            )
+            writer.writerow([str(v) for k, v in final_personnel.get().items()])
 
-    with open("statistics.txt", "w") as file:
-        file.write(
-            ",".join(
-                [
-                    str(base_url),
-                    str(num_pages_scraped.value),
-                    str(num_emails_found.value),
-                ]
-            )
+    with open("statistics.csv", "w", encoding="UTF8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(
+            [str(base_url), str(num_pages_scraped.value), str(num_emails_found.value)]
         )
 
     print(

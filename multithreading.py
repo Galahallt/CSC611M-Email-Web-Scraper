@@ -11,6 +11,7 @@ import requests
 
 import time
 import re
+import csv
 
 # page number of staff directory
 MAX_PAGES = 105
@@ -148,16 +149,42 @@ class Runnable(threading.Thread):
                 break
 
 
-def statistics(base_url, start_time):
-    with open("details.txt", "w") as file:
-        file.write("Full Name,Email,College\n")
-        for n in list(final_personnel.queue):
-            file.write(",".join([str(a) for a in n.values()]) + "\n")
+# statistics in txt file
+# def statistics(base_url, start_time):
+#     with open("details.txt", "w") as file:
+#         file.write("Full Name,Email,College\n")
+#         for n in list(final_personnel.queue):
+#             file.write(",".join([str(a) for a in n.values()]) + "\n")
 
-    with open("statistics.txt", "w") as file:
-        file.write(
-            ",".join([str(base_url), str(num_pages_scraped), str(num_emails_found)])
-        )
+#     with open("statistics.txt", "w") as file:
+#         file.write(
+#             ",".join([str(base_url), str(num_pages_scraped), str(num_emails_found)])
+#         )
+
+#     print(
+#         "\nMultithreading\n========================================"
+#         + "\nStatistics:\nBase URL: "
+#         + base_url
+#         + "\nNumber of Pages Scraped: "
+#         + str(num_pages_scraped)
+#         + "\nNumber of Emails Found: "
+#         + str(num_emails_found)
+#         + "\n========================================"
+#     )
+
+#     print("Time elapsed: " + str(time.time() - start_time) + " seconds")
+
+# statistics in csv file
+def statistics(base_url, start_time):
+    with open("details.csv", "w", encoding="UTF8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Full Name", "Email", "College"])
+        for n in list(final_personnel.queue):
+            writer.writerow(str(a) for a in n.values())
+
+    with open("statistics.csv", "w", encoding="UTF8", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerow([str(base_url), str(num_pages_scraped), str(num_emails_found)])
 
     print(
         "\nMultithreading\n========================================"
