@@ -17,9 +17,9 @@ import csv
 MAX_PAGES = 105
 
 # queue to get personnel url
-input_personnel = queue.Queue()
+personnel_id = queue.Queue()
 # queue to get final details of personnel
-final_personnel = queue.Queue()
+personnel_details = queue.Queue()
 
 # statistics
 num_pages_scraped = 0
@@ -121,7 +121,7 @@ class Runnable(threading.Thread):
                     personnel_info["email"] = email
                     personnel_info["department"] = department
 
-                    final_personnel.put(personnel_info)
+                    personnel_details.put(personnel_info)
 
                     # increment scraped pages
                     global num_pages_scraped
@@ -137,11 +137,11 @@ class Runnable(threading.Thread):
                     + str(url)
                     + "> failed to load...\n Will be put back into the queue..."
                 )
-                input_personnel.put(url)
+                personnel_id.put(url)
 
         while True:
             try:
-                personnel = input_personnel.get(timeout=1)
+                personnel = personnel_id.get(timeout=1)
             except Exception as e:
                 break
 
@@ -157,7 +157,7 @@ class Runnable(threading.Thread):
 # def statistics(base_url, start_time):
 #     with open("details.txt", "w") as file:
 #         file.write("Full Name,Email,College\n")
-#         for n in list(final_personnel.queue):
+#         for n in list(personnel_details.queue):
 #             file.write(",".join([str(a) for a in n.values()]) + "\n")
 
 #     with open("statistics.txt", "w") as file:
@@ -183,7 +183,7 @@ def statistics(base_url, start_time):
     with open("details.csv", "w", encoding="UTF8", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["Full Name", "Email", "College"])
-        for n in list(final_personnel.queue):
+        for n in list(personnel_details.queue):
             writer.writerow(str(a) for a in n.values())
 
     with open("statistics.csv", "w", encoding="UTF8", newline="") as f:
@@ -241,7 +241,7 @@ def scrape(base_url, scrape_time, num_threads):
             for i in final:
                 personnel_page = f"{base_url}/staff-directory/?personnel={i['id']}"
 
-                input_personnel.put(personnel_page)
+                personnel_id.put(personnel_page)
 
             threads = []
 

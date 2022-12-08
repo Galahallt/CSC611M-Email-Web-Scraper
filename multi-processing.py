@@ -19,8 +19,8 @@ MAX_PAGES = 105
 class Runnable(multiprocessing.Process):
     def __init__(
         self,
-        input_personnel,
-        final_personnel,
+        personnel_id,
+        personnel_details,
         shared_resource_lock_email,
         shared_resource_lock_pages,
         num_pages_scraped,
@@ -29,8 +29,8 @@ class Runnable(multiprocessing.Process):
         scrape_time,
     ):
         multiprocessing.Process.__init__(self)
-        self.input_personnel = input_personnel
-        self.final_personnel = final_personnel
+        self.personnel_id = personnel_id
+        self.personnel_details = personnel_details
         self.shared_resource_lock_email = shared_resource_lock_email
         self.shared_resource_lock_pages = shared_resource_lock_pages
         self.num_pages_scraped = num_pages_scraped
@@ -123,7 +123,7 @@ class Runnable(multiprocessing.Process):
                     personnel_info["email"] = email
                     personnel_info["department"] = department
 
-                    self.final_personnel.put(personnel_info)
+                    self.personnel_details.put(personnel_info)
 
                     # increment scraped pages
                     self.shared_resource_lock_pages.acquire()
@@ -138,11 +138,11 @@ class Runnable(multiprocessing.Process):
                     + str(url)
                     + "> failed to load...\n Will be put back into the queue..."
                 )
-                self.input_personnel.put(url)
+                self.personnel_id.put(url)
 
         while True:
             try:
-                personnel = self.input_personnel.get(timeout=1)
+                personnel = self.personnel_id.get(timeout=1)
             except Exception as e:
                 break
 
@@ -158,15 +158,15 @@ class Runnable(multiprocessing.Process):
 # def statistics(
 #     base_url,
 #     start_time,
-#     final_personnel,
+#     personnel_details,
 #     num_pages_scraped,
 #     num_emails_found,
 # ):
 #     with open("details.txt", "w") as file:
 #         file.write("Full Name,Email,College\n")
-#         while not final_personnel.empty():
+#         while not personnel_details.empty():
 #             file.write(
-#                 ",".join([str(v) for k, v in final_personnel.get().items()]) + "\n"
+#                 ",".join([str(v) for k, v in personnel_details.get().items()]) + "\n"
 #             )
 
 #     with open("statistics.txt", "w") as file:
@@ -197,15 +197,15 @@ class Runnable(multiprocessing.Process):
 def statistics(
     base_url,
     start_time,
-    final_personnel,
+    personnel_details,
     num_pages_scraped,
     num_emails_found,
 ):
     with open("details.csv", "w", encoding="UTF8", newline="") as f:
         writer = csv.writer(f)
         writer.writerow(["Full Name", "Email", "College"])
-        while not final_personnel.empty():
-            writer.writerow([str(v) for k, v in final_personnel.get().items()])
+        while not personnel_details.empty():
+            writer.writerow([str(v) for k, v in personnel_details.get().items()])
 
     with open("statistics.csv", "w", encoding="UTF8", newline="") as f:
         writer = csv.writer(f)
@@ -231,8 +231,8 @@ def scrape(
     base_url,
     scrape_time,
     num_processes,
-    input_personnel,
-    final_personnel,
+    personnel_id,
+    personnel_details,
     shared_resource_lock_email,
     shared_resource_lock_pages,
     num_pages_scraped,
@@ -274,14 +274,14 @@ def scrape(
                     f"https://www.dlsu.edu.ph/staff-directory/?personnel={i['id']}"
                 )
 
-                input_personnel.put(personnel_page)
+                personnel_id.put(personnel_page)
 
             processes = []
 
             for i in range(num_processes):
                 process = Runnable(
-                    input_personnel,
-                    final_personnel,
+                    personnel_id,
+                    personnel_details,
                     shared_resource_lock_email,
                     shared_resource_lock_pages,
                     num_pages_scraped,
@@ -303,7 +303,7 @@ def scrape(
     statistics(
         base_url,
         start_time,
-        final_personnel,
+        personnel_details,
         num_pages_scraped,
         num_emails_found,
     )
@@ -321,10 +321,10 @@ if __name__ == "__main__":
     scrape_time = scrape_time * 60
 
     # queue to get personnel url
-    input_personnel = multiprocessing.Queue()
+    personnel_id = multiprocessing.Queue()
 
     # queue to get final details of personnel
-    final_personnel = multiprocessing.Queue()
+    personnel_details = multiprocessing.Queue()
 
     # statistics
     shared_resource_lock_email = multiprocessing.Lock()
@@ -338,8 +338,8 @@ if __name__ == "__main__":
         base_url,
         scrape_time,
         num_processes,
-        input_personnel,
-        final_personnel,
+        personnel_id,
+        personnel_details,
         shared_resource_lock_email,
         shared_resource_lock_pages,
         num_pages_scraped,
