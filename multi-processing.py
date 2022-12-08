@@ -207,10 +207,15 @@ def statistics(
         while not personnel_details.empty():
             writer.writerow([str(v) for k, v in personnel_details.get().items()])
 
-    with open("statistics.csv", "w", encoding="UTF8", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow(
-            [str(base_url), str(num_pages_scraped.value), str(num_emails_found.value)]
+    with open("statistics.txt", "w") as file:
+        file.write(
+            ",".join(
+                [
+                    str(base_url),
+                    str(num_pages_scraped.value),
+                    str(num_emails_found.value),
+                ]
+            )
         )
 
     print(

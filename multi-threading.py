@@ -186,9 +186,8 @@ def statistics(base_url, start_time):
         for n in list(personnel_details.queue):
             writer.writerow(str(a) for a in n.values())
 
-    with open("statistics.csv", "w", encoding="UTF8", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerow([str(base_url), str(num_pages_scraped), str(num_emails_found)])
+    with open("statistics.txt", "w") as file:
+         file.write(",".join([str(base_url), str(num_pages_scraped), str(num_emails_found)]))
 
     print(
         "\nMultithreading\n========================================"
