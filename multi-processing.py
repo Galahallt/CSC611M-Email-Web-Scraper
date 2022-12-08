@@ -133,13 +133,17 @@ class Runnable(multiprocessing.Process):
                     webdriver.quit()
             except Exception as e:
                 print(e)
-                print("Personnel page <" + str(url) + "> failed to load")
+                print(
+                    "Personnel page <"
+                    + str(url)
+                    + "> failed to load...\n Will be put back into the queue..."
+                )
+                self.input_personnel.put(url)
 
         while True:
             try:
                 personnel = self.input_personnel.get(timeout=1)
             except Exception as e:
-                print("input personnel:" + str(e))
                 break
 
             print(message.format(id(self)))

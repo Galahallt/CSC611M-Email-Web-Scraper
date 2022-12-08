@@ -132,13 +132,17 @@ class Runnable(threading.Thread):
                     webdriver.quit()
             except Exception as e:
                 print(e)
-                print("Personnel page <" + str(url) + "> failed to load")
+                print(
+                    "Personnel page <"
+                    + str(url)
+                    + "> failed to load...\n Will be put back into the queue..."
+                )
+                input_personnel.put(url)
 
         while True:
             try:
                 personnel = input_personnel.get(timeout=1)
             except Exception as e:
-                print(e)
                 break
 
             print(message.format(id(self)))
