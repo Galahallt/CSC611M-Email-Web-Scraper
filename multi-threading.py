@@ -233,9 +233,10 @@ def scrape(base_url, scrape_time, num_threads):
 
             final = res.json()["personnel"]
 
-            global num_pages_scraped
+            if payload["page"] == 1:
+                global num_pages_scraped
 
-            num_pages_scraped += 1
+                num_pages_scraped += 1
 
             for i in final:
                 personnel_page = f"{base_url}/staff-directory/?personnel={i['id']}"

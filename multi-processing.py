@@ -266,7 +266,8 @@ def scrape(
 
             final = res.json()["personnel"]
 
-            num_pages_scraped.value += 1
+            if payload["page"] == 1:
+                num_pages_scraped += 1
 
             for i in final:
                 personnel_page = (
